@@ -40,7 +40,7 @@ func testGetPolicy(t *testing.T, e *casbin.Enforcer, res [][]string) {
 func initPolicy(t *testing.T, a *Adapter) {
 	// Because the DB is empty at first,
 	// so we need to load the policy from the file adapter (.CSV) first.
-	e, err := casbin.NewEnforcer("examples/rbac_model.conf", "examples/rbac_policy.csv")
+	e, err := casbin.NewEnforcer("example/rbac_model.conf", "example/rbac_policy.csv")
 	if err != nil {
 		panic(err)
 	}
@@ -75,7 +75,7 @@ func testSaveLoad(t *testing.T, a *Adapter) {
 	// Create an adapter and an enforcer.
 	// NewEnforcer() will load the policy automatically.
 
-	e, _ := casbin.NewEnforcer("examples/rbac_model.conf", a)
+	e, _ := casbin.NewEnforcer("example/rbac_model.conf", a)
 	testGetPolicy(t, e, [][]string{{"alice", "data1", "read"}, {"bob", "data2", "write"}, {"data2_admin", "data2", "read"}, {"data2_admin", "data2", "write"}})
 }
 
@@ -87,7 +87,7 @@ func initAdapter(t *testing.T, driverName string, dataSourceName string, params 
 	}
 
 	// Initialize some policy in DB.
-	//initPolicy(t, a)
+	initPolicy(t, a)
 	// Now the DB has policy, so we can provide a normal use case.
 	// Note: you don't need to look at the above code
 	// if you already have a working DB with policy inside.
@@ -99,7 +99,7 @@ func initAdapterWithGormInstance(t *testing.T, db *sql.DB) *Adapter {
 	// Create an adapter
 	a, _ := NewAdapterByDB(db)
 	// Initialize some policy in DB.
-	//initPolicy(t, a)
+	initPolicy(t, a)
 	// Now the DB has policy, so we can provide a normal use case.
 	// Note: you don't need to look at the above code
 	// if you already have a working DB with policy inside.
@@ -111,7 +111,7 @@ func initAdapterWithGormInstanceByName(t *testing.T, db *sql.DB, name string) *A
 	//Create an Adapter
 	a, _ := NewAdapterByDBUseTableName(db, "", name)
 	// Initialize some policy in DB.
-	//initPolicy(t, a)
+	initPolicy(t, a)
 	// Now the DB has policy, so we can provide a normal use case.
 	// Note: you don't need to look at the above code
 	// if you already have a working DB with policy inside.
@@ -141,7 +141,7 @@ func initAdapterWithGormInstanceByName(t *testing.T, db *sql.DB, name string) *A
 func testAutoSave(t *testing.T, a *Adapter) {
 
 	// NewEnforcer() will load the policy automatically.
-	e, _ := casbin.NewEnforcer("examples/rbac_model.conf", a)
+	e, _ := casbin.NewEnforcer("example/rbac_model.conf", a)
 	// AutoSave is enabled by default.
 	// Now we disable it.
 	e.EnableAutoSave(false)
@@ -179,7 +179,7 @@ func testAutoSave(t *testing.T, a *Adapter) {
 
 func testFilteredPolicy(t *testing.T, a *Adapter) {
 	// NewEnforcer() without an adapter will not auto load the policy
-	e, _ := casbin.NewEnforcer("examples/rbac_model.conf")
+	e, _ := casbin.NewEnforcer("example/rbac_model.conf")
 	// Now set the adapter
 	e.SetAdapter(a)
 

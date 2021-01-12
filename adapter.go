@@ -152,10 +152,10 @@ func NewAdapterByDBUseTableName(db *sql.DB, prefix string, tableName string) (*A
 	if len(tableName) == 0 {
 		tableName = defaultTableName
 	}
-
 	a := &Adapter{
 		tablePrefix: prefix,
 		tableName:   tableName,
+		driverName: "postgres",
 	}
 
 	a.db = db
@@ -181,12 +181,12 @@ func openDBConnection(driverName, dataSourceName string) (*sql.DB, error) {
 
 func (a *Adapter) createDatabase() error {
 	var err error
-	db, err := openDBConnection(a.driverName, a.dataSourceName)
-	if err != nil {
-		return err
-	}
+	//db, err := openDBConnection(a.driverName, a.dataSourceName)
+	//if err != nil {
+	//	return err
+	//}
 	if a.driverName == "postgres" {
-		if _, err = db.Exec("CREATE DATABASE IF NOT EXISTS" + a.databaseName); err != nil {
+		if _, err = a.db.Exec("CREATE DATABASE IF NOT EXISTS" + a.databaseName); err != nil {
 			return err
 		}
 	}
@@ -237,23 +237,13 @@ func (a *Adapter) casbinRuleTable() func(db *sql.DB) *sql.DB {
 
 func (a *Adapter) createTable() error {
 	var err error
-	db, err := openDBConnection(a.driverName, a.dataSourceName)
-	if err != nil {
-		return err
-	}
+	//db, err := openDBConnection(a.driverName, a.dataSourceName)
+	//if err != nil {
+	//	return err
+	//}
 	if a.driverName == "postgres" {
-		if _, err = db.Exec("CREATE tables IF NOT EXISTS public." + a.tableName +`(
-	id bigserial NOT NULL,
-	p_type varchar(40) NULL,
-	v0 varchar(40) NULL,
-	v1 varchar(40) NULL,
-	v2 varchar(40) NULL,
-	v3 varchar(40) NULL,
-	v4 varchar(40) NULL,
-	v5 varchar(40) NULL,
-	CONSTRAINT casbin_rule_pkey PRIMARY KEY (id)
-);
-CREATE UNIQUE INDEX IF NOT EXISTS unique_index ON `+a.tableName+` USING btree (p_type, v0, v1, v2, v3, v4, v5);`); err != nil {
+		qstr := "CREATE table IF NOT EXISTS " + a.tableName +" (id bigserial NOT NULL,p_type varchar(40) NULL,v0 varchar(40) NULL,v1 varchar(40) NULL,v2 varchar(40) NULL,v3 varchar(40) NULL,v4 varchar(40) NULL,v5 varchar(40) NULL,CONSTRAINT casbin_rule_pkey PRIMARY KEY (id)); CREATE UNIQUE INDEX IF NOT EXISTS unique_index ON "+a.tableName+" USING btree (p_type, v0, v1, v2, v3, v4, v5);"
+		if _, err = a.db.Exec(qstr); err != nil {
 			return err
 		}
 	}
@@ -261,14 +251,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_index ON `+a.tableName+` USING btree (p
 }
 
 func (a *Adapter) dropTable() error {
-	db, err := openDBConnection(a.driverName, a.dataSourceName)
-	if err != nil {
+	//db, err := openDBConnection(a.driverName, a.dataSourceName)
+	//if err != nil {
+	//	return err
+	//}
+	if _, err := a.db.Exec("DROP TABLE " + a.tableName +`;`); err != nil {
 		return err
-	}
-	if a.driverName == "postgres" {
-		if _, err = db.Exec("DROP TABLE " + a.tableName +`;`); err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -316,89 +304,97 @@ func (a *Adapter) LoadPolicy(model model.Model) error {
 // LoadFilteredPolicy loads only policy rules that match the filter.
 func (a *Adapter) LoadFilteredPolicy(model model.Model, filter interface{}) error {
 	//var lines []CasbinRule
-	var ruleline CasbinRule
-	var qstr string
+	//var ruleline CasbinRule
+	//var qstr string
 	filterValue, ok := filter.(Filter)
-	db :=a.db
+	//db :=a.db
 	if !ok {
 		return errors.New("invalid filter type")
 	}
 	if len(filterValue.PType) > 0 {
-		qstr = "select * from "+a.tableName+" where p_type in ($1);"
-		rows, err := db.Query(qstr, filterValue.PType)
-		if err !=nil {
+		//qstr = "select * from "+a.tableName+" where p_type in ($1);"
+		err :=a.QueryFilter("p_type", model,filterValue.PType)
+		if err != nil {
 			return err
 		}
-		for rows.Next(){
-			rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
-			loadPolicyLine(ruleline, model)
-		}
+		//qparstr := make([]interface{},1)
+		//for a :=range filterValue.PType{
+		//	qparstr = append(qparstr, a)
+		//}
+		//rows, err := a.db.Query(qstr, qparstr)
+		//if err !=nil {
+		//	return err
+		//}
+		//for rows.Next(){
+		//	rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
+		//	loadPolicyLine(ruleline, model)
+		//}
 	}
 	if len(filterValue.V0) > 0 {
-		qstr = "select * from "+a.tableName+" where v0 in ($1);"
-		rows, err := db.Query(qstr, filterValue.V0)
-		if err !=nil {
+		//qstr = "select * from "+a.tableName+" where v0 in ($1);"
+		err :=a.QueryFilter( "v0", model,filterValue.V0)
+		if err != nil {
 			return err
 		}
-		for rows.Next(){
-			rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
-			loadPolicyLine(ruleline, model)
-		}
+		//rows, err := a.db.Query(qstr, filterValue.V0)
+		//if err !=nil {
+		//	return err
+		//}
+		//for rows.Next(){
+		//	rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
+		//	loadPolicyLine(ruleline, model)
+		//}
 	}
 	if len(filterValue.V1) > 0 {
-		qstr = "select * from "+a.tableName+" where v1 in ($1);"
-		rows, err := db.Query(qstr, filterValue.V1)
-		if err !=nil {
+		//qstr = "select * from "+a.tableName+" where v1 in ($1);"
+		err :=a.QueryFilter( "v1", model,filterValue.V1)
+		if err != nil {
 			return err
 		}
-		for rows.Next(){
-			rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
-			loadPolicyLine(ruleline, model)
-		}
+		//rows, err := a.db.Query(qstr, filterValue.V1)
+		//if err !=nil {
+		//	return err
+		//}
+		//for rows.Next(){
+		//	rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
+		//	loadPolicyLine(ruleline, model)
+		//}
 	}
 	if len(filterValue.V2) > 0 {
-		qstr = "select * from "+a.tableName+" where v2 in ($1);"
-		rows, err := db.Query(qstr, filterValue.V2)
-		if err !=nil {
+		//qstr = "select * from "+a.tableName+" where v2 in ($1);"
+		err :=a.QueryFilter("v2", model,filterValue.V2)
+		if err != nil {
 			return err
-		}
-		for rows.Next(){
-			rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
-			loadPolicyLine(ruleline, model)
 		}
 	}
 	if len(filterValue.V3) > 0 {
-		qstr = "select * from "+a.tableName+" where v3 in ($1);"
-		rows, err := db.Query(qstr, filterValue.V3)
-		if err !=nil {
+		//qstr = "select * from "+a.tableName+" where v3 in ($1);"
+		err :=a.QueryFilter("v3", model,filterValue.V3)
+		if err != nil {
 			return err
-		}
-		for rows.Next(){
-			rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
-			loadPolicyLine(ruleline, model)
 		}
 	}
 	if len(filterValue.V4) > 0 {
-		qstr = "select * from "+a.tableName+" where v4 in ($1);"
-		rows, err := db.Query(qstr, filterValue.V4)
-		if err !=nil {
+		//qstr = "select * from "+a.tableName+" where v4 in ($1);"
+		err :=a.QueryFilter("v4", model,filterValue.V4)
+		if err != nil {
 			return err
-		}
-		for rows.Next(){
-			rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
-			loadPolicyLine(ruleline, model)
 		}
 	}
 	if len(filterValue.V5) > 0 {
-		qstr = "select * from "+a.tableName+" where v5 in ($1);"
-		rows, err := db.Query(qstr, filterValue.V5)
-		if err !=nil {
+		//qstr = "select * from "+a.tableName+" where v5 in ($1);"
+		err :=a.QueryFilter("v5", model,filterValue.V5)
+		if err != nil {
 			return err
 		}
-		for rows.Next(){
-			rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
-			loadPolicyLine(ruleline, model)
-		}
+		//rows, err := a.db.Query(qstr, filterValue.V5)
+		//if err !=nil {
+		//	return err
+		//}
+		//for rows.Next(){
+		//	rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
+		//	loadPolicyLine(ruleline, model)
+		//}
 	}
 
 	///*if err := a.db.Scopes(a.filterQuery(a.db, filterValue)).Order("ID").Find(&lines).Error; err != nil {
@@ -410,6 +406,31 @@ func (a *Adapter) LoadFilteredPolicy(model model.Model, filter interface{}) erro
 	//}
 	a.isFiltered = true
 
+	return nil
+}
+
+func (a *Adapter) QueryFilter(filtersub string,model model.Model,qvalue []string)error{
+	var ruleline CasbinRule
+	qparstr := make([]interface{},0)
+	//i := 1
+	var comma string
+	for a, value :=range qvalue{
+		if a != 0 {
+			comma += ","
+		}
+		comma += " $"+strconv.Itoa(a+1)
+		//i++
+		qparstr = append(qparstr, value)
+	}
+	qstr := "select * from "+a.tableName+" where "+filtersub+" in ("+comma+");"
+	rows, err := a.db.Query(qstr, qparstr...)
+	if err !=nil {
+		return err
+	}
+	for rows.Next(){
+		rows.Scan(&ruleline.ID,&ruleline.PType,&ruleline.V0,&ruleline.V1,&ruleline.V2,&ruleline.V3,&ruleline.V4,&ruleline.V5)
+		loadPolicyLine(ruleline, model)
+	}
 	return nil
 }
 
@@ -447,25 +468,25 @@ func (a *Adapter) IsFiltered() bool {
 //}
 
 func (a *Adapter) savePolicyLine(ptype string, rule []string) map[string]interface{} {
-	var qstr map[string]interface{}
-	qstr["p_type"] = ptype
+	qstr := make(map[string]interface{})
+	qstr[string("p_type")] = ptype
 	if len(rule) > 0 {
-		qstr["v0"] = rule[0]
+		qstr[string("v0")] = rule[0]
 	}
 	if len(rule) > 1 {
-		qstr["v1"] = rule[1]
+		qstr[string("v1")] = rule[1]
 	}
 	if len(rule) > 2 {
-		qstr["v2"] = rule[2]
+		qstr[string("v2")] = rule[2]
 	}
 	if len(rule) > 3 {
-		qstr["v3"] = rule[3]
+		qstr[string("v3")] = rule[3]
 	}
 	if len(rule) > 4 {
-		qstr["v4"] = rule[4]
+		qstr[string("v4")] = rule[4]
 	}
 	if len(rule) > 5 {
-		qstr["v5"] = rule[5]
+		qstr[string("v5")] = rule[5]
 	}
 
 	return qstr
@@ -515,7 +536,7 @@ func (a *Adapter) AddPolicy(sec string, ptype string, rule []string) error {
 // RemovePolicy removes a policy rule from the storage.
 func (a *Adapter) RemovePolicy(sec string, ptype string, rule []string) error {
 	//line := a.savePolicyLine(ptype, rule)
-	err := a.rawDelete(a.db, rule) //can't use db.Delete as we're not using primary key http://jinzhu.me/gorm/crud.html#delete
+	err := a.rawDelete(ptype,a.db, rule) //can't use db.Delete as we're not using primary key http://jinzhu.me/gorm/crud.html#delete
 	return err
 }
 
@@ -534,7 +555,7 @@ func (a *Adapter) AddPolicies(sec string, ptype string, rules [][]string) error 
 func (a *Adapter) RemovePolicies(sec string, ptype string, rules [][]string) error {
 	for _, rule := range rules {
 		//line := a.savePolicyLine(ptype, rule)
-		if err := a.rawDelete(a.db, rule); err != nil { //can't use db.Delete as we're not using primary key http://jinzhu.me/gorm/crud.html#delete
+		if err := a.rawDelete(ptype,a.db, rule); err != nil { //can't use db.Delete as we're not using primary key http://jinzhu.me/gorm/crud.html#delete
 				return err
 			}
 	}
@@ -545,7 +566,7 @@ func (a *Adapter) RemovePolicies(sec string, ptype string, rules [][]string) err
 func (a *Adapter) RemoveFilteredPolicy(sec string, ptype string, fieldIndex int, fieldValues ...string) error {
 	//line := a.getTableInstance()
 	var line []string
-	line = append(line, ptype)
+	//line = append(line, ptype)
 	if fieldIndex <= 0 && 0 < fieldIndex+len(fieldValues) {
 		line = append(line, fieldValues[0-fieldIndex])
 	}
@@ -564,36 +585,44 @@ func (a *Adapter) RemoveFilteredPolicy(sec string, ptype string, fieldIndex int,
 	if fieldIndex <= 5 && 5 < fieldIndex+len(fieldValues) {
 		line = append(line, fieldValues[5-fieldIndex])
 	}
-	err := a.rawDelete(a.db, line)
+	err := a.rawDelete(ptype,a.db, line)
 	return err
 }
 
-func (a *Adapter) rawDelete(db *sql.DB, line []string) error {
+func (a *Adapter) rawDelete(ptype string, db *sql.DB, line []string) error {
 	//queryArgs := []interface{}{line.PType}
 	var queryArgs []interface{}
-	queryStr := "p_type = ?"
+	queryStr := "p_type = $1"
+	queryArgs = append(queryArgs, ptype)
+	i :=1
 	if len(line) > 0 {
-		queryStr += " and v0 = ?"
+		i++
+		queryStr += " and v0 = $"+strconv.Itoa(i)
 		queryArgs = append(queryArgs, line[0])
 	}
 	if len(line) > 1 {
-		queryStr += " and v1 = ?"
+		i++
+		queryStr += " and v1 = $"+strconv.Itoa(i)
 		queryArgs = append(queryArgs, line[1])
 	}
 	if len(line) > 2 {
-		queryStr += " and v2 = ?"
+		i++
+		queryStr += " and v2 = $"+strconv.Itoa(i)
 		queryArgs = append(queryArgs, line[2])
 	}
 	if len(line) > 3 {
-		queryStr += " and v3 = ?"
+		i++
+		queryStr += " and v3 = $"+strconv.Itoa(i)
 		queryArgs = append(queryArgs, line[3])
 	}
 	if len(line) > 4 {
-		queryStr += " and v4 = ?"
+		i++
+		queryStr += " and v4 = $"+strconv.Itoa(i)
 		queryArgs = append(queryArgs, line[4])
 	}
 	if len(line) > 5 {
-		queryStr += " and v5 = ?"
+		i++
+		queryStr += " and v5 = $"+strconv.Itoa(i)
 		queryArgs = append(queryArgs, line[5])
 	}
 	//args := append([]interface{}{queryStr}, queryArgs...)
@@ -636,6 +665,7 @@ func (a *Adapter) ExecInsertSqlRow(arg map[string]interface{}) error{
 	}
 	return nil
 }
+
 func (a *Adapter) ExecDeleteSqlRow(arg map[string]interface{}) error{
 	var test []interface{}
 
