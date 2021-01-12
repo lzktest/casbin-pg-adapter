@@ -1,3 +1,3 @@
-module casbinpgadapter
+module casbinpgandadapter
 
 go 1.15
