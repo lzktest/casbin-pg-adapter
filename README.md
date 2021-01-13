@@ -4,7 +4,7 @@ Casbin Postgres Adapter is the postgres adapter for [Casbin](Casbin)
 
 ## Installation
 ```sh
-$ go get github.com/cychiuae/casbin-pg-adapter
+$ go get github.com/lzktest/casbinpgandadapter
 ```
 
 ## Example
@@ -16,21 +16,22 @@ import (
   "os"
 
   "github.com/casbin/casbin/v2"
-  "github.com/cychiuae/casbin-pg-adapter"
+  casbinpgadapter "github.com/lzktest/casbinpgandadapter"
 )
 
 func main() {
-  connectionString := "postgresql://postgres:@localhost:5432/postgres?sslmode=disable"
-  db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+  connectionString := "port=30001 user=db password=Aa123456 host=192.168.3.121 dbname=testdb sslmode=disable"
+  db, err := sql.Open("postgres", connectionString)
   if err != nil {
     panic(err)
   }
 
-  tableName := "casbin"
-  adapter, err := casbinpgadapter.NewAdapter(db, tableName)
-  // If you are using db schema
-  // myDBSchema := "mySchema"
+  tableName := "casbin_rule"
+  adapter, err := casbinpgadapter.NewAdapterByDBUseTableName(db, "", tableName)
+  // other new living example
   // adapter, err := casbinpgadapter.NewAdapterWithDBSchema(db, myDBSchema, tableName)
+  // adapter, err := casbinpgadapter.NewAdapterByDB(db)
+  // adapter, err := casbinpgadapter.NewAdapter("postgres", connectionString)
   if err != nil {
     panic(err)
   }
