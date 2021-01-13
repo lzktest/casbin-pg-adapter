@@ -1,4 +1,4 @@
-# Casbin Postgres Adapter
+# tish version is fork from Casbin-Postgres-Adapter and gorm-adapter, test from gorm-adapter test file
 
 Casbin Postgres Adapter is the postgres adapter for [Casbin](Casbin)
 
