@@ -1,4 +1,4 @@
-package casbinpgandadapter
+package pgandadapter
 // Copyright 2017 The casbin Authors. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
